@@ -14,22 +14,24 @@ class PromptEditorService:
             temperature=settings.temperature,
         )
 
-    def edit(self, source_prompt):
-        return self._invoke(self._history(source_prompt, []))
+    def messages_for_edit(self, source_prompt):
+        return self._history(source_prompt, [])
 
-    def refine(self, source_prompt, revisions, instruction):
+    def messages_for_refine(self, source_prompt, revisions, instruction):
         messages = self._history(source_prompt, revisions)
         messages.append(HumanMessage(content=instruction))
-        return self._invoke(messages)
+        return messages
 
-    def regenerate(self, source_prompt, revisions):
+    def messages_for_regenerate(self, source_prompt, revisions):
         messages = self._history(source_prompt, revisions)
         if isinstance(messages[-1], AIMessage):
             messages.pop()
-        return self._invoke(messages)
+        return messages
 
-    def _invoke(self, messages):
-        return self.llm.invoke(messages).content
+    def stream(self, messages):
+        for chunk in self.llm.stream(messages):
+            if chunk.content:
+                yield chunk.content
 
     def _system_message(self):
         # файл читается на каждый запрос, чтобы ручные правки применялись без рестарта

@@ -77,6 +77,11 @@ class SessionRepository:
         revisions = self.get_revisions(session_id)
         return revisions[-1] if revisions else None
 
+    def delete_session(self, session_id):
+        with self._connect() as conn:
+            conn.execute("DELETE FROM revisions WHERE session_id = ?", (session_id,))
+            conn.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
+
     def set_final_file(self, session_id, file_path):
         with self._connect() as conn:
             conn.execute(

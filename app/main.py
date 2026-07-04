@@ -1,4 +1,7 @@
+import json
+
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 import uvicorn
 
 from app.config import Settings
@@ -14,6 +17,8 @@ storage = ResultStorage(settings.results_dir)
 
 app = FastAPI(title="Prompt Editor")
 
+SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+
 
 def _get_session_or_404(session_id):
     session = repository.get_session(session_id)
@@ -22,41 +27,68 @@ def _get_session_or_404(session_id):
     return session
 
 
-def _call_llm(action):
+def _sse(payload):
+    return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+
+
+def _stream(session_id, messages, instruction, emit_session, drop_session_on_error):
+    if emit_session:
+        yield _sse({"type": "session", "session_id": session_id})
+    parts = []
     try:
-        return action()
+        for token in editor.stream(messages):
+            parts.append(token)
+            yield _sse({"type": "token", "text": token})
     except Exception as error:
-        raise HTTPException(status_code=502, detail=f"Ошибка LLM-провайдера: {error}")
+        if drop_session_on_error:
+            repository.delete_session(session_id)
+        yield _sse({"type": "error", "detail": str(error)})
+        return
+    repository.add_revision(session_id, instruction, "".join(parts))
+    yield _sse({"type": "done"})
+
+
+def _streaming_response(generator):
+    return StreamingResponse(
+        generator, media_type="text/event-stream", headers=SSE_HEADERS
+    )
 
 
 @app.post("/api/prompts")
 def create_edit(request: EditRequest):
-    result = _call_llm(lambda: editor.edit(request.prompt))
     session_id = repository.create_session(request.prompt)
-    repository.add_revision(session_id, None, result)
-    return {"session_id": session_id, "edited_prompt": result}
+    messages = editor.messages_for_edit(request.prompt)
+    return _streaming_response(
+        _stream(session_id, messages, None, emit_session=True, drop_session_on_error=True)
+    )
 
 
 @app.post("/api/prompts/{session_id}/regenerate")
 def regenerate(session_id: int):
     session = _get_session_or_404(session_id)
     revisions = repository.get_revisions(session_id)
-    result = _call_llm(
-        lambda: editor.regenerate(session["source_prompt"], revisions)
+    messages = editor.messages_for_regenerate(session["source_prompt"], revisions)
+    return _streaming_response(
+        _stream(session_id, messages, None, emit_session=False, drop_session_on_error=False)
     )
-    repository.add_revision(session_id, None, result)
-    return {"session_id": session_id, "edited_prompt": result}
 
 
 @app.post("/api/prompts/{session_id}/refine")
 def refine(session_id: int, request: RefineRequest):
     session = _get_session_or_404(session_id)
     revisions = repository.get_revisions(session_id)
-    result = _call_llm(
-        lambda: editor.refine(session["source_prompt"], revisions, request.instruction)
+    messages = editor.messages_for_refine(
+        session["source_prompt"], revisions, request.instruction
     )
-    repository.add_revision(session_id, request.instruction, result)
-    return {"session_id": session_id, "edited_prompt": result}
+    return _streaming_response(
+        _stream(
+            session_id,
+            messages,
+            request.instruction,
+            emit_session=False,
+            drop_session_on_error=False,
+        )
+    )
 
 
 @app.post("/api/prompts/{session_id}/finalize")
