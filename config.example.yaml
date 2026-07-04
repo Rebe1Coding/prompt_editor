@@ -1,0 +1,15 @@
+# Скопируй в config.yaml и впиши свой ключ RouterAI
+provider:
+  api_key: "YOUR_API_KEY"
+  base_url: "https://routerai.ru/api/v1"
+  model: "openai/gpt-4o"
+  temperature: 0.3
+
+storage:
+  db_path: "data/prompt_editor.db"
+  results_dir: "data/results"
+  system_prompt_path: "prompts/system_prompt.md"
+
+server:
+  host: "127.0.0.1"
+  port: 1488

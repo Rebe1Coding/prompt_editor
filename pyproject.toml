@@ -1,0 +1,12 @@
+[project]
+name = "prompt-editor"
+version = "0.1.0"
+description = "Backend for a personal prompt editing web app"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "langchain>=0.3",
+    "langchain-openai>=0.2",
+    "pyyaml>=6.0",
+]

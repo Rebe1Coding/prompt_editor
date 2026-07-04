@@ -1,0 +1,20 @@
+# конфиг с API-ключом; в репозиторий идёт только config.example.yaml
+config.yaml
+
+# локальная документация
+docs/
+
+# база данных и финальные отредактированные промпты
+data/
+*.db
+*.sqlite3
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# ide
+.idea/
+.vscode/
