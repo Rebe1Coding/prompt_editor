@@ -8,7 +8,9 @@ from app.config import Settings
 from app.db import SessionRepository
 from app.llm import PromptEditorService
 from app.schemas import EditRequest, RefineRequest
+from app.search import TavilySearch
 from app.storage import ResultStorage
+from app.suggester import ArticleSuggester
 
 SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
 
@@ -23,7 +25,7 @@ def _streaming_response(generator):
     )
 
 
-def create_app(repository, editor, storage):
+def create_app(repository, editor, storage, suggester):
     app = FastAPI(title="Prompt Editor")
 
     def get_session_or_404(session_id):
@@ -31,6 +33,13 @@ def create_app(repository, editor, storage):
         if session is None:
             raise HTTPException(status_code=404, detail="Сессия не найдена")
         return session
+
+    def suggestions_block(edited_prompt):
+        # суб-агент не должен ронять основной ответ, если поиск недоступен
+        try:
+            return suggester.suggest(edited_prompt)
+        except Exception:
+            return None
 
     def stream(session_id, messages, instruction, emit_session, drop_session_on_error):
         if emit_session:
@@ -45,6 +54,11 @@ def create_app(repository, editor, storage):
                 repository.delete_session(session_id)
             yield _sse({"type": "error", "detail": str(error)})
             return
+        block = suggestions_block("".join(parts))
+        if block:
+            appendix = "\n\n" + block
+            parts.append(appendix)
+            yield _sse({"type": "token", "text": appendix})
         repository.add_revision(session_id, instruction, "".join(parts))
         yield _sse({"type": "done"})
 
@@ -106,7 +120,9 @@ def build_default_app():
     repository = SessionRepository(settings.db_path)
     editor = PromptEditorService(settings)
     storage = ResultStorage(settings.results_dir)
-    return settings, create_app(repository, editor, storage)
+    searcher = TavilySearch(settings.tavily_api_key, settings.search_max_results)
+    suggester = ArticleSuggester(settings, searcher)
+    return settings, create_app(repository, editor, storage, suggester)
 
 
 settings, app = build_default_app()

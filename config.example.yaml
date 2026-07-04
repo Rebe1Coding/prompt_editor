@@ -5,10 +5,15 @@ provider:
   model: "openai/gpt-4o"
   temperature: 0.3
 
+search:
+  tavily_api_key: "YOUR_TAVILY_API_KEY"
+  max_results: 3
+
 storage:
   db_path: "data/prompt_editor.db"
   results_dir: "data/results"
   system_prompt_path: "prompts/system_prompt.md"
+  search_query_prompt_path: "prompts/search_query_prompt.md"
 
 server:
   host: "127.0.0.1"

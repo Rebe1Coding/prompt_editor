@@ -31,6 +31,19 @@ class FakeEditor:
             raise RuntimeError(self.error)
 
 
+class FakeSuggester:
+    def __init__(self):
+        self.block = None
+        self.seen_prompt = None
+        self.error = None
+
+    def suggest(self, edited_prompt):
+        self.seen_prompt = edited_prompt
+        if self.error is not None:
+            raise RuntimeError(self.error)
+        return self.block
+
+
 @pytest.fixture
 def repo(tmp_path):
     return SessionRepository(str(tmp_path / "test.db"))
@@ -47,8 +60,13 @@ def editor():
 
 
 @pytest.fixture
-def client(repo, editor, storage):
-    return TestClient(create_app(repo, editor, storage))
+def suggester():
+    return FakeSuggester()
+
+
+@pytest.fixture
+def client(repo, editor, storage, suggester):
+    return TestClient(create_app(repo, editor, storage, suggester))
 
 
 def read_sse(response):

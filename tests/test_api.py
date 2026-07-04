@@ -21,6 +21,25 @@ def test_create_streams_tokens_and_persists(client, repo, editor):
     assert revisions[0]["instruction"] is None
 
 
+def test_suggester_block_appended_and_persisted(client, repo, suggester):
+    suggester.block = "## Может пригодиться\n\n- [Статья](https://a)"
+    events = _stream(client, "POST", "/api/prompts", {"prompt": "исходник"})
+    text = "".join(e["text"] for e in events if e["type"] == "token")
+    assert text == "Исправленный промпт\n\n## Может пригодиться\n\n- [Статья](https://a)"
+    # суб-агент видит именно отредактированный промпт
+    assert suggester.seen_prompt == "Исправленный промпт"
+    session_id = events[0]["session_id"]
+    assert repo.get_revisions(session_id)[0]["result"] == text
+
+
+def test_suggester_failure_does_not_break_answer(client, repo, suggester):
+    suggester.error = "поиск недоступен"
+    events = _stream(client, "POST", "/api/prompts", {"prompt": "исходник"})
+    assert [e["type"] for e in events] == ["session", "token", "token", "token", "done"]
+    session_id = events[0]["session_id"]
+    assert repo.get_revisions(session_id)[0]["result"] == "Исправленный промпт"
+
+
 def test_create_error_deletes_empty_session(client, repo, editor):
     editor.tokens = []
     editor.error = "нет ключа"
