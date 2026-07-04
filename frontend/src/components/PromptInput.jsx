@@ -1,7 +1,10 @@
 import { useState } from 'react';
 
+import Icon from './Icon.jsx';
+
 export default function PromptInput({ mode, busy, onSend, onStop }) {
   const [text, setText] = useState('');
+  const [focus, setFocus] = useState(false);
 
   const submit = () => {
     if (busy) return;
@@ -9,6 +12,7 @@ export default function PromptInput({ mode, busy, onSend, onStop }) {
     if (!value) return;
     onSend(value);
     setText('');
+    setFocus(false);
   };
 
   const onKeyDown = (e) => {
@@ -16,34 +20,56 @@ export default function PromptInput({ mode, busy, onSend, onStop }) {
       e.preventDefault();
       submit();
     }
+    if (e.key === 'Escape' && focus) setFocus(false);
   };
 
-  const placeholder =
-    mode === 'create'
-      ? 'Вставьте промпт для редактирования…'
-      : 'Уточнение к последней версии (Shift+Enter — перенос строки)…';
+  const isCreate = mode === 'create';
+  const label = isCreate ? 'Исходный промпт' : 'Уточнение';
+  const placeholder = isCreate
+    ? 'Вставьте промпт, который нужно улучшить…'
+    : 'Опишите, что поправить в последней версии…';
 
   return (
-    <div className="composer">
-      <span className="composer-prompt">$</span>
-      <textarea
-        className="composer-area"
-        value={text}
-        placeholder={placeholder}
-        disabled={busy}
-        rows={Math.min(8, text.split('\n').length)}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={onKeyDown}
-      />
-      {busy ? (
-        <button className="chip danger" onClick={onStop} title="Остановить генерацию">
-          стоп ■
-        </button>
-      ) : (
-        <button className="chip primary" onClick={submit} disabled={!text.trim()}>
-          отправить ⏎
-        </button>
-      )}
+    <div className={`composer ${focus ? 'composer--focus' : ''}`}>
+      <div className="composer__inner">
+        <div className="composer__bar">
+          <span className="composer__label">
+            <Icon name={isCreate ? 'file' : 'message'} size={14} />
+            {label}
+          </span>
+          <button
+            className="btn btn--ghost btn--icon btn--sm"
+            onClick={() => setFocus((v) => !v)}
+            title={focus ? 'Свернуть редактор' : 'Развернуть на весь экран'}
+          >
+            <Icon name={focus ? 'minimize' : 'maximize'} size={16} />
+          </button>
+        </div>
+
+        <textarea
+          className="composer__area"
+          value={text}
+          placeholder={placeholder}
+          disabled={busy}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={onKeyDown}
+        />
+
+        <div className="composer__footer">
+          <span className="hint">Enter — отправить · Shift+Enter — новая строка</span>
+          {busy ? (
+            <button className="btn btn--danger" onClick={onStop} title="Остановить генерацию">
+              <Icon name="square" size={15} />
+              Стоп
+            </button>
+          ) : (
+            <button className="btn btn--primary" onClick={submit} disabled={!text.trim()}>
+              <Icon name="send" size={16} />
+              Отправить
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

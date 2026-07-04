@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import Icon from './Icon.jsx';
+
 export default function CopyButton({ text }) {
   const [copied, setCopied] = useState(false);
 
@@ -14,8 +16,9 @@ export default function CopyButton({ text }) {
   };
 
   return (
-    <button className="chip" onClick={copy} title="Копировать в формате Markdown">
-      {copied ? '✓ скопировано' : 'копировать'}
+    <button className="btn btn--sm" onClick={copy} title="Копировать в формате Markdown">
+      <Icon name={copied ? 'check' : 'copy'} size={15} />
+      {copied ? 'Скопировано' : 'Копировать'}
     </button>
   );
 }
