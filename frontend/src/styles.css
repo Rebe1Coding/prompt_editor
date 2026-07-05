@@ -169,6 +169,17 @@ button {
   font-size: 12px;
 }
 
+.btn--toggle {
+  gap: 6px;
+  color: var(--fg-muted);
+}
+
+.btn--toggle.is-active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* --- Sidebar --- */
 .sidebar {
   background: var(--surface);

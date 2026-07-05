@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import Icon from './Icon.jsx';
 
-export default function PromptInput({ mode, busy, onSend, onStop }) {
+export default function PromptInput({ mode, busy, searchEnabled, onToggleSearch, onSend, onStop }) {
   const [text, setText] = useState('');
   const [focus, setFocus] = useState(false);
 
@@ -56,6 +56,15 @@ export default function PromptInput({ mode, busy, onSend, onStop }) {
         />
 
         <div className="composer__footer">
+          <button
+            className={`btn btn--sm btn--toggle ${searchEnabled ? 'is-active' : ''}`}
+            onClick={onToggleSearch}
+            aria-pressed={searchEnabled}
+            title="Искать статьи по задаче и прикреплять их блоком «Может пригодиться»"
+          >
+            <Icon name="search" size={14} />
+            Расширенный поиск
+          </button>
           <span className="hint">Enter — отправить · Shift+Enter — новая строка</span>
           {busy ? (
             <button className="btn btn--danger" onClick={onStop} title="Остановить генерацию">

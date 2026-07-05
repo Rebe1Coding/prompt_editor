@@ -21,7 +21,10 @@ export function useChat() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
+  const [searchEnabled, setSearchEnabled] = useState(true);
   const abortRef = useRef(null);
+
+  const toggleSearch = useCallback(() => setSearchEnabled((v) => !v), []);
 
   const patchMessage = useCallback((id, updater) => {
     setMessages((prev) => prev.map((m) => (m.id === id ? updater(m) : m)));
@@ -78,9 +81,9 @@ export function useChat() {
       const userMsg = { id: uid('u'), role: 'user', kind: 'source', content: prompt };
       const assistant = newAssistant();
       setMessages([userMsg, assistant]);
-      runStream(assistant.id, (h, s) => createPrompt(prompt, h, s));
+      runStream(assistant.id, (h, s) => createPrompt(prompt, searchEnabled, h, s));
     },
-    [runStream],
+    [runStream, searchEnabled],
   );
 
   const runRefine = useCallback(
@@ -88,9 +91,9 @@ export function useChat() {
       const userMsg = { id: uid('u'), role: 'user', kind: 'instruction', content: instruction };
       const assistant = newAssistant();
       setMessages((prev) => [...prev, userMsg, assistant]);
-      runStream(assistant.id, (h, s) => refinePrompt(sessionId, instruction, h, s));
+      runStream(assistant.id, (h, s) => refinePrompt(sessionId, instruction, searchEnabled, h, s));
     },
-    [runStream],
+    [runStream, searchEnabled],
   );
 
   const newChat = useCallback(() => {
@@ -140,8 +143,8 @@ export function useChat() {
       }
       return copy;
     });
-    runStream(assistantId, (h, s) => regeneratePrompt(activeId, h, s));
-  }, [activeId, busy, runStream]);
+    runStream(assistantId, (h, s) => regeneratePrompt(activeId, searchEnabled, h, s));
+  }, [activeId, busy, runStream, searchEnabled]);
 
   // Правка исходного промпта невозможна на сервере (source immutable) — создаём
   // новую сессию; правка уточнения отправляется как новый refine.
@@ -184,6 +187,8 @@ export function useChat() {
     busy,
     error,
     notice,
+    searchEnabled,
+    toggleSearch,
     mode: activeId == null ? 'create' : 'refine',
     canRegenerate: activeId != null && hasResult && !busy,
     canFinalize: activeId != null && hasResult && !busy,

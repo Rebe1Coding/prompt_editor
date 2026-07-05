@@ -5,7 +5,13 @@ from pydantic import BaseModel
 
 class EditRequest(BaseModel):
     prompt: str
+    search: bool = True
 
 
 class RefineRequest(BaseModel):
     instruction: str
+    search: bool = True
+
+
+class RegenerateRequest(BaseModel):
+    search: bool = True

@@ -32,6 +32,16 @@ def test_suggester_block_appended_and_persisted(client, repo, suggester):
     assert repo.get_revisions(session_id)[0]["result"] == text
 
 
+def test_search_disabled_skips_suggester(client, repo, suggester):
+    suggester.block = "## Может пригодиться\n\n- [X](https://x)"
+    events = _stream(
+        client, "POST", "/api/prompts", {"prompt": "исходник", "search": False}
+    )
+    assert [e["type"] for e in events] == ["session", "token", "token", "token", "done"]
+    # суб-агент не вызывался
+    assert suggester.seen_prompt is None
+
+
 def test_suggester_failure_does_not_break_answer(client, repo, suggester):
     suggester.error = "поиск недоступен"
     events = _stream(client, "POST", "/api/prompts", {"prompt": "исходник"})

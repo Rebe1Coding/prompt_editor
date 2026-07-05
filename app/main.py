@@ -7,7 +7,7 @@ import uvicorn
 from app.config import Settings
 from app.db import SessionRepository
 from app.llm import PromptEditorService
-from app.schemas import EditRequest, RefineRequest
+from app.schemas import EditRequest, RefineRequest, RegenerateRequest
 from app.search import TavilySearch
 from app.storage import ResultStorage
 from app.suggester import ArticleSuggester
@@ -41,7 +41,9 @@ def create_app(repository, editor, storage, suggester):
         except Exception:
             return None
 
-    def stream(session_id, messages, instruction, emit_session, drop_session_on_error):
+    def stream(
+        session_id, messages, instruction, emit_session, drop_session_on_error, search
+    ):
         if emit_session:
             yield _sse({"type": "session", "session_id": session_id})
         parts = []
@@ -54,7 +56,7 @@ def create_app(repository, editor, storage, suggester):
                 repository.delete_session(session_id)
             yield _sse({"type": "error", "detail": str(error)})
             return
-        block = suggestions_block("".join(parts))
+        block = suggestions_block("".join(parts)) if search else None
         if block:
             appendix = "\n\n" + block
             parts.append(appendix)
@@ -67,16 +69,17 @@ def create_app(repository, editor, storage, suggester):
         session_id = repository.create_session(request.prompt)
         messages = editor.messages_for_edit(request.prompt)
         return _streaming_response(
-            stream(session_id, messages, None, True, True)
+            stream(session_id, messages, None, True, True, request.search)
         )
 
     @app.post("/api/prompts/{session_id}/regenerate")
-    def regenerate(session_id: int):
+    def regenerate(session_id: int, request: RegenerateRequest | None = None):
         session = get_session_or_404(session_id)
         revisions = repository.get_revisions(session_id)
         messages = editor.messages_for_regenerate(session["source_prompt"], revisions)
+        search = request.search if request else True
         return _streaming_response(
-            stream(session_id, messages, None, False, False)
+            stream(session_id, messages, None, False, False, search)
         )
 
     @app.post("/api/prompts/{session_id}/refine")
@@ -87,7 +90,7 @@ def create_app(repository, editor, storage, suggester):
             session["source_prompt"], revisions, request.instruction
         )
         return _streaming_response(
-            stream(session_id, messages, request.instruction, False, False)
+            stream(session_id, messages, request.instruction, False, False, request.search)
         )
 
     @app.post("/api/prompts/{session_id}/finalize")

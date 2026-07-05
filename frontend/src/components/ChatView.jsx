@@ -102,7 +102,14 @@ export default function ChatView({ chat, onToggleSidebar }) {
         )}
       </div>
 
-      <PromptInput mode={mode} busy={busy} onSend={chat.send} onStop={chat.stop} />
+      <PromptInput
+        mode={mode}
+        busy={busy}
+        searchEnabled={chat.searchEnabled}
+        onToggleSearch={chat.toggleSearch}
+        onSend={chat.send}
+        onStop={chat.stop}
+      />
     </main>
   );
 }

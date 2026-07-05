@@ -62,16 +62,16 @@ async function stream(path, body, handlers, signal) {
   }
 }
 
-export function createPrompt(prompt, handlers, signal) {
-  return stream('/prompts', { prompt }, handlers, signal);
+export function createPrompt(prompt, search, handlers, signal) {
+  return stream('/prompts', { prompt, search }, handlers, signal);
 }
 
-export function regeneratePrompt(sessionId, handlers, signal) {
-  return stream(`/prompts/${sessionId}/regenerate`, null, handlers, signal);
+export function regeneratePrompt(sessionId, search, handlers, signal) {
+  return stream(`/prompts/${sessionId}/regenerate`, { search }, handlers, signal);
 }
 
-export function refinePrompt(sessionId, instruction, handlers, signal) {
-  return stream(`/prompts/${sessionId}/refine`, { instruction }, handlers, signal);
+export function refinePrompt(sessionId, instruction, search, handlers, signal) {
+  return stream(`/prompts/${sessionId}/refine`, { instruction, search }, handlers, signal);
 }
 
 export function listSessions() {
