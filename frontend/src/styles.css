@@ -180,6 +180,40 @@ button {
   color: var(--accent);
 }
 
+.hint-tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: var(--fg-faint);
+  cursor: help;
+}
+
+.hint-tip__bubble {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  width: max-content;
+  max-width: 260px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--fg);
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease;
+  z-index: 20;
+}
+
+.hint-tip:hover .hint-tip__bubble,
+.hint-tip:focus-visible .hint-tip__bubble {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* --- Sidebar --- */
 .sidebar {
   background: var(--surface);

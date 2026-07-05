@@ -65,6 +65,13 @@ export default function PromptInput({ mode, busy, searchEnabled, onToggleSearch,
             <Icon name="search" size={14} />
             Расширенный поиск
           </button>
+          <span className="hint-tip" tabIndex={0}>
+            <Icon name="help" size={14} />
+            <span className="hint-tip__bubble" role="tooltip">
+              Расширенный поиск подбирает статьи по проблеме, описанной в промпте, и
+              прикрепляет их блоком «Может пригодиться».
+            </span>
+          </span>
           <span className="hint">Enter — отправить · Shift+Enter — новая строка</span>
           {busy ? (
             <button className="btn btn--danger" onClick={onStop} title="Остановить генерацию">
