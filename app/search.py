@@ -16,9 +16,17 @@ class TavilySearch:
             "api_key": self.api_key,
             "query": query,
             "max_results": self.max_results,
-            "search_depth": "basic",
+            "search_depth": "advanced",
         }
         response = httpx.post(TAVILY_URL, json=payload, timeout=self.timeout)
         response.raise_for_status()
         results = response.json().get("results", [])
-        return [{"title": item["title"], "url": item["url"]} for item in results]
+        return [
+            {
+                "title": item["title"],
+                "url": item["url"],
+                "content": item.get("content", ""),
+                "score": item.get("score", 0.0),
+            }
+            for item in results
+        ]

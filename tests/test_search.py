@@ -18,7 +18,7 @@ def test_search_parses_title_and_url(monkeypatch):
         def json(self):
             return {
                 "results": [
-                    {"title": "T", "url": "U", "content": "C"},
+                    {"title": "T", "url": "U", "content": "C", "score": 0.8},
                 ]
             }
 
@@ -26,4 +26,6 @@ def test_search_parses_title_and_url(monkeypatch):
         return FakeResponse()
 
     monkeypatch.setattr(search_module.httpx, "post", fake_post)
-    assert TavilySearch("key", 3).search("q") == [{"title": "T", "url": "U"}]
+    assert TavilySearch("key", 3).search("q") == [
+        {"title": "T", "url": "U", "content": "C", "score": 0.8}
+    ]
